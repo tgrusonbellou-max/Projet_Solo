@@ -1,8 +1,10 @@
 ﻿//Utilise l'add on SQLite de Microsoft
+
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.Sqlite;
 
 //Création ou Connexion a ma BDD SQL
-string connectionString = "Data Source=escapegame.db";
+string connectionString = "Data Source = escapegame.db";
 using var connection = new SqliteConnection(connectionString);
 connection.Open();
 Console.WriteLine("Connecté !");
@@ -13,8 +15,9 @@ createTables.CommandText = @"
     CREATE TABLE IF NOT EXISTS Joueur(
    Id_joueur INTEGER,
    Pseudo TEXT NOT NULL,
+   Mot_de_passe text not null,
    PRIMARY KEY(Id_joueur),
-   UNIQUE(Pseudo)
+        check (length(Mot_de_passe)>4)
 );
 
 CREATE TABLE IF NOT EXISTS Salle(
@@ -100,7 +103,6 @@ Reponse, Indice, Id_salle) VALUES
 ('Quel opérateur C# vérifie l''égalité entre deux valeurs ?', '=', '==', '!=', 'B', 'Un seul signe égal sert à l''affectation.', 2),
 
 --Salle 3
--- SALLE 3 : Le Datacenter de Radianite (Réseaux, Serveurs, Protocoles)
 ('Quel port réseau est utilisé par défaut par le protocole HTTPS ?', '80', '21', '443', 'C', 'Le HTTP classique est sur le 80, le sécurisé sur le 443.', 3),
 ('Que signifie le terme Ping dans un jeu en ligne ?', 'La fréquence de l''écran', 'La latence réseau en millisecondes', 'Le nombre d''images par seconde', 'B', 'C''est le temps d''aller-retour vers le serveur.', 3),
 ('Quelle adresse IP désigne toujours la machine locale (localhost) ?', '192.168.1.1', '127.0.0.1', '8.8.8.8', 'B', 'Boucle locale commençant par 127.', 3),
@@ -158,29 +160,145 @@ while (string.IsNullOrWhiteSpace(pseudo))
    }
 }
 
-bool joueurExiste = false;
+Console.WriteLine("Quel est votre mot de passe ?");
 
-SqliteCommand verifRetour = connection.CreateCommand();
-verifRetour.CommandText = "SELECT Pseudo FROM Joueur;";
-using SqliteDataReader reader = verifRetour.ExecuteReader();
-while (reader.Read())
+string mdp = "";
+
+while (string.IsNullOrWhiteSpace(mdp) || mdp.Length <= 4)
 {
-   if(pseudo == reader.GetString(0))
+   mdp = Console.ReadLine() ?? "";
+
+   if (string.IsNullOrWhiteSpace(mdp))
    {
-      joueurExiste = true;
-      Console.WriteLine("Bon retour dans Escape the Valorant Data Center");
-      break;
+      Console.WriteLine("Le mot de passe ne peut pas être vide");
+   }
+
+   if (mdp.Length <= 4)
+   {
+      Console.WriteLine("Le mot de passe doit faire plus de 4 caractères");
    }
 }
 
-if (!joueurExiste)
+//Boucle de connexion
+
+int idJoueur;
+bool aPartie = false;
+
+SqliteCommand verifcompte = connection.CreateCommand();
+verifcompte.CommandText = @"select Id_joueur from Joueur 
+                 where Pseudo = @pseudo
+                 and Mot_de_passe = @mdp;";
+
+verifcompte.Parameters.AddWithValue("@pseudo", pseudo);
+verifcompte.Parameters.AddWithValue("@mdp", mdp);
+
+object resultat = verifcompte.ExecuteScalar();
+
+if (resultat != null)
 {
-   SqliteCommand insertPseudo = connection.CreateCommand();
-   insertPseudo.CommandText = @"
-   INSERT OR IGNORE INTO Joueur (Pseudo) VALUES (@pseudo);";
-   insertPseudo.Parameters.AddWithValue("@pseudo", pseudo);
-   insertPseudo.ExecuteNonQuery();
-   Console.WriteLine($"Bienvenue dans Escape the Valorant Data Center {pseudo}");
+   idJoueur = Convert.ToInt32(resultat);
+   
+   SqliteCommand verifparties = connection.CreateCommand();
+   verifparties.CommandText = @"select Id_joueur from Partie where Id_joueur = @idJoueur;";
+      verifparties.Parameters.AddWithValue("@idJoueur", idJoueur);
+      
+      object resultatParties = verifparties.ExecuteScalar();
+
+      if (resultatParties == null)
+      {
+         aPartie = false;
+         Console.WriteLine("");
+         Console.WriteLine($"Bon retour dans Escape the Valorant Data Center {pseudo}");
+         Console.WriteLine("Que voulez vous faire ?");
+         Console.WriteLine("");
+         Console.WriteLine("====================");
+         Console.WriteLine("1- Demarrer une nouvelle partie");
+         Console.WriteLine("====================");
+      }
+      else
+      {
+         aPartie = true;
+         Console.WriteLine("");
+         Console.WriteLine($"Bon retour dans Escape the Valorant Data Center {pseudo}"); 
+         Console.WriteLine("");
+         Console.WriteLine("Que voulez vous faire ?");
+         Console.WriteLine("");
+         Console.WriteLine("====================");
+         Console.WriteLine("1- Demarrer une nouvelle partie");
+         Console.WriteLine("2- Reprendre la partie en cour");
+         Console.WriteLine("3- Historique des parties");
+         Console.WriteLine("====================");
+      }
+   
+   
 }
+else
+{
+   SqliteCommand insertjoueur  = connection.CreateCommand();
+   insertjoueur.CommandText =@"insert into Joueur (Pseudo , Mot_de_passe) 
+                               values (@pseudo, @mdp);";
+   insertjoueur.Parameters.AddWithValue("@pseudo", pseudo);
+   insertjoueur.Parameters.AddWithValue("@mdp", mdp);
+   insertjoueur.ExecuteNonQuery();
+   
+   SqliteCommand getLastId = connection.CreateCommand();
+   getLastId.CommandText = "SELECT last_insert_rowid();";
+   idJoueur = Convert.ToInt32(getLastId.ExecuteScalar());
+   
+   aPartie = false;
+   Console.WriteLine("");
+   Console.WriteLine($"Bienvenue dans Escape the Valorant Data Center {pseudo}");
+   Console.WriteLine("Que voulez vous faire ?");
+   Console.WriteLine("");
+   Console.WriteLine("====================");
+   Console.WriteLine("1- Demarrer une nouvelle partie");
+   Console.WriteLine("====================");
+}
+
+string menuResult = "";
+
+if (aPartie)
+{
+   while (menuResult != "1" && menuResult != "2" && menuResult != "3")
+   {
+      menuResult = Console.ReadLine() ??"";
+      
+      if (menuResult == "1")
+      {
+         
+      }
+      
+      if (menuResult == "2")
+      {
+         
+      }
+      
+      if (menuResult == "3")
+      {
+         
+      }
+   }
+}
+else
+{
+   while (menuResult != "1")
+   {
+      menuResult = Console.ReadLine() ??"";
+
+      if (menuResult == "1")
+      {
+         
+      }
+   }
+}
+
+
+
+
+
+
+
+
+
 
 
