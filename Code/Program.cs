@@ -56,8 +56,6 @@ CREATE TABLE IF NOT EXISTS Partie(
 ";
 createTables.ExecuteNonQuery();
 
-Console.WriteLine("Done.");
-
 SqliteCommand insertInSalles = connection.CreateCommand();
 insertInSalles.CommandText = @"
 INSERT OR IGNORE INTO Salle (Id_salle, Nom) VALUES          
@@ -219,7 +217,7 @@ if (resultat != null)
       {
          aPartie = true;
          Console.WriteLine("");
-         Console.WriteLine($"Bon retour dans Escape the Valorant Data Center {pseudo}"); 
+         Console.WriteLine($"Bon retour dans Escape the Valorant Data Center {pseudo}");
          Console.WriteLine("");
          Console.WriteLine("Que voulez vous faire ?");
          Console.WriteLine("");
